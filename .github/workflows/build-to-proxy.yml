@@ -1,0 +1,38 @@
+name: Build to proxy
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GIT_USER: 'pontus3i'
+      GIT_EMAIL: 'iii.pontus.com@gmail.com'
+      REPO_USER: '3i-software-development'
+      REPO_NAME: 'NodeJsCSB'
+      BRANCH: 'demo'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          npm install
+          npm run build
+
+      - name: Git config
+        run: |
+          git config --global user.name $GIT_USER
+          git config --global user.email $GIT_EMAIL
+
+      - name: Push to proxy
+        run: |
+          git clone https://$GIT_USER:${{ secrets.EXTRA_GITHUB_TOKEN }}@github.com/$REPO_USER/$REPO_NAME.git
+          cd $REPO_NAME
+          git checkout $BRANCH
+          rm -rf ./dist
+          mv ../dist .
+          git add -A
+          git commit -m "Build `date`"
+          git push https://$GIT_USER:${{ secrets.EXTRA_GITHUB_TOKEN }}@github.com/$REPO_USER/$REPO_NAME.git $BRANCH
